@@ -7,8 +7,8 @@ import ReactDOM from 'react-dom';
 // const CANVAS_HEIGHT = 640;
 const OBJECT_RADIUS = 28;
 const SPAWN_INTERVAL = 900; // ms
-const MIN_SPEED = 1.0;
-const MAX_SPEED = 6.0;
+const MIN_SPEED = 3.0;
+const MAX_SPEED = 7.0;
 
 function randomObject(width, height) {
   return {
@@ -167,7 +167,7 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [running, width, height, onScore, onGameOver, trail, slicesRef]);
+  }, [running, width, height, onScore, onGameOver]);
 
   const canvasElement = useMemo(() => (
     <canvas

@@ -5,6 +5,8 @@ import Scoreboard from './Scoreboard';
 import StartScreen from './StartScreen';
 import './App.css';
 
+const sliceAudio = new Audio(process.env.PUBLIC_URL + '/slice.mp3');
+
 function App() {
   const [gameState, setGameState] = useState('start'); // start, running, gameover
   const scoreRef = useRef(0);
@@ -37,6 +39,8 @@ function App() {
 
   const handleScore = () => {
     scoreRef.current += 1;
+    sliceAudio.currentTime = 0;
+    sliceAudio.play();
   };
 
   const handleRestart = () => {

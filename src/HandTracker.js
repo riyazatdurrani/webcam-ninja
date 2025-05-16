@@ -57,7 +57,7 @@ const HandTracker = forwardRef(({ onSlice, running, width = 480, height = 640, t
         const dx = x - prev.x;
         const dy = y - prev.y;
         const dt = now - prev.timestamp;
-        if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) * 1.2 && dt < 200) {
+        if ((Math.abs(dx) > 30 || Math.abs(dy) > 30) && dt < 200) {
           onSlice({ x1: prev.x, y1: prev.y, x2: x, y2: y, timestamp: now });
         }
       }

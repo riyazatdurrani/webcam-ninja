@@ -78,6 +78,7 @@ const HandTracker = forwardRef(({ onSlice, running, width = 480, height = 640, t
         },
         width,
         height,
+        facingMode: 'user'
       });
       cameraRef.current = camera;
       camera.start();

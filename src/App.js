@@ -45,6 +45,14 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Detect mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleStart = () => {
     scoreRef.current = 0;
     setGameState('running');
@@ -153,17 +161,21 @@ function App() {
               onSpeedChange={setSpeedMultiplier}
               isMusicEnabled={isMusicEnabled}
               onMusicToggle={setIsMusicEnabled}
+              isMobile={isMobile}
+              LeaderboardComponent={isMobile ? Leaderboard : null}
             />
           </div>
-          <div style={{ 
-            position: 'fixed',
-            right: 20,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 150
-          }}>
-            <Leaderboard />
-          </div>
+          {!isMobile && (
+            <div style={{ 
+              position: 'fixed',
+              right: 20,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 150
+            }}>
+              <Leaderboard />
+            </div>
+          )}
         </div>
       )}
     </div>

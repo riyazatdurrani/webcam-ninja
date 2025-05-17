@@ -9,7 +9,9 @@ export default function StartScreen({
   speedMultiplier, 
   onSpeedChange,
   isMusicEnabled,
-  onMusicToggle
+  onMusicToggle,
+  isMobile,
+  LeaderboardComponent
 }) {
   return (
     <div
@@ -213,6 +215,18 @@ export default function StartScreen({
             </div>
           </div>
         </div>
+        {isMobile && LeaderboardComponent && (
+          <div style={{
+            maxHeight: '220px',
+            overflowY: 'auto',
+            marginTop: 16,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+          }}>
+            <LeaderboardComponent />
+          </div>
+        )}
       </div>
     </div>
   );

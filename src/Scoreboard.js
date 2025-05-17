@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'https://webcam-ninja-okfn.onrender.com/api';
 
 export function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);

@@ -63,7 +63,7 @@ function App() {
     // Save to global leaderboard
     if (playerName && playerName.trim().length > 0) {
       try {
-        const response = await fetch('http://localhost:5001/api/scores', {
+        const response = await fetch('https://webcam-ninja-okfn.onrender.com/api/scores', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

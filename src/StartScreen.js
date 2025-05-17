@@ -217,8 +217,6 @@ export default function StartScreen({
         </div>
         {isMobile && LeaderboardComponent && (
           <div style={{
-            maxHeight: '220px',
-            overflowY: 'auto',
             marginTop: 16,
             width: '100%',
             display: 'flex',

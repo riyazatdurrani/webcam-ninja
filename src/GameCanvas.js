@@ -1,11 +1,10 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { randInt, randomColor, lineIntersectsCircle } from './utils';
+import { randInt, lineIntersectsCircle } from './utils';
 import ReactDOM from 'react-dom';
 
 // Preload images
 const IMAGE_FILENAMES = [
-  '1.png', '2.png', '3.png', '4.png', '5.png', '6.png',
-  'special.png'
+  '1.png', '2.png', '3.png', '4.png', '5.png', '6.png', 'special.png', 'danger.png'
 ];
 const loadedImages = IMAGE_FILENAMES.map(name => {
   const img = new window.Image();
@@ -18,23 +17,38 @@ const loadedImages = IMAGE_FILENAMES.map(name => {
 // const CANVAS_HEIGHT = 640;
 const OBJECT_RADIUS = 60;
 const SPAWN_INTERVAL = 900; // ms
-const MIN_SPEED = 3.0;
-const MAX_SPEED = 7.0;
+const MIN_SPEED = 200;
+const MAX_SPEED = 500;
 
-function randomObject(width, height) {
-  const img = loadedImages[Math.floor(Math.random() * loadedImages.length)];
+// Danger sound
+const dangerAudio = new window.Audio(process.env.PUBLIC_URL + '/danger.wav');
+
+function randomObject(width, height, speedMultiplier = 1) {
+  // Make danger.png rare
+  let imgIndex;
+  const dangerIndex = IMAGE_FILENAMES.indexOf('danger.png');
+  if (Math.random() < 0.05) { // 5% chance for danger
+    imgIndex = dangerIndex;
+  } else {
+    // Pick a random non-danger image
+    let pool = IMAGE_FILENAMES.filter((name) => name !== 'danger.png');
+    imgIndex = IMAGE_FILENAMES.indexOf(pool[Math.floor(Math.random() * pool.length)]);
+  }
+  const img = loadedImages[imgIndex];
+  const isDanger = IMAGE_FILENAMES[imgIndex] === 'danger.png';
   return {
     x: randInt(OBJECT_RADIUS, width - OBJECT_RADIUS),
     y: -OBJECT_RADIUS,
     r: OBJECT_RADIUS,
     image: img,
-    speed: MIN_SPEED + Math.pow(Math.random(), 2) * (MAX_SPEED - MIN_SPEED),
+    speed: (MIN_SPEED + Math.pow(Math.random(), 2) * (MAX_SPEED - MIN_SPEED)) * speedMultiplier,
     id: Math.random().toString(36).slice(2),
     sliced: false,
+    type: isDanger ? 'danger' : 'normal',
   };
 }
 
-export default React.memo(function GameCanvas({ running, slicesRef, onScore, onGameOver, width = 480, height = 640, trail = [] }) {
+export default React.memo(function GameCanvas({ running, slicesRef, onScore, onGameOver, width = 480, height = 640, trail = [], speedMultiplier = 1 }) {
   const canvasRef = useRef();
   const objectsRef = useRef([]);
   const lastSpawnRef = useRef(Date.now());
@@ -59,10 +73,12 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
   }, [running]);
 
   // Main game loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!running || !contextRef.current) return;
     
     const ctx = contextRef.current;
+    let lastFrameTime = Date.now();
 
     function draw() {
       ctx.clearRect(0, 0, width, height);
@@ -93,7 +109,7 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
           // fallback: draw a circle if image not loaded
           ctx.beginPath();
           ctx.arc(obj.x, obj.y, obj.r, 0, 2 * Math.PI);
-          ctx.fillStyle = '#ccc';
+          ctx.fillStyle = obj.type === 'danger' ? '#ff0000' : '#ccc';
           ctx.fill();
         }
       }
@@ -125,7 +141,7 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
       }
     }
 
-    function update() {
+    function update(deltaTime) {
       const now = Date.now();
       const BOTTOM_LINE_Y = height - 32;
       
@@ -137,7 +153,7 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
         if (rand > 0.95) numToSpawn = 3;
         else if (rand > 0.7) numToSpawn = 2;
         for (let i = 0; i < numToSpawn; i++) {
-          objectsRef.current.push(randomObject(width, height));
+          objectsRef.current.push(randomObject(width, height, speedMultiplier));
         }
         lastSpawnRef.current = now;
       }
@@ -145,7 +161,7 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
       // Move objects
       for (const obj of objectsRef.current) {
         if (!obj.sliced) {
-          obj.y += obj.speed;
+          obj.y += obj.speed * deltaTime;
         }
       }
 
@@ -159,9 +175,9 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
 
       // Check for game over
       for (const obj of objectsRef.current) {
-        if (obj.y + obj.r >= BOTTOM_LINE_Y) {
+        if (obj.type === 'normal' && obj.y + obj.r >= BOTTOM_LINE_Y) {
           gameOverRef.current = true;
-          onGameOver();
+          onGameOver(false);
           return;
         }
       }
@@ -172,8 +188,16 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
         for (const slice of currentSlices) {
           for (const obj of objectsRef.current) {
             if (!obj.sliced && lineIntersectsCircle(slice.x1, slice.y1, slice.x2, slice.y2, obj.x, obj.y, obj.r)) {
-              obj.sliced = true;
-              onScore();
+              if (obj.type === 'danger') {
+                dangerAudio.currentTime = 0;
+                dangerAudio.play();
+                gameOverRef.current = true;
+                onGameOver(true);
+                return;
+              } else {
+                obj.sliced = true;
+                onScore();
+              }
             }
           }
         }
@@ -185,18 +209,22 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
     }
 
     function loop() {
+      const now = Date.now();
+      const deltaTime = (now - lastFrameTime) / 1000; // seconds
+      lastFrameTime = now;
+      update(deltaTime);
+      draw();
       if (!gameOverRef.current) {
-        update();
-        draw();
         animationRef.current = requestAnimationFrame(loop);
       }
     }
 
+    lastFrameTime = Date.now();
     loop();
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [running, width, height, onScore, onGameOver]);
+  }, [running, width, height, onScore, onGameOver, speedMultiplier]);
 
   const canvasElement = useMemo(() => (
     <canvas

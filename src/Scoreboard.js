@@ -29,14 +29,19 @@ export function Leaderboard() {
   };
 
   return (
-    <div className="leaderboard" style={{ 
+    <div className="leaderboard responsive-leaderboard" style={{ 
       background: 'rgba(255, 246, 0, 0.9)', 
       color: '#000', 
       padding: '20px', 
       borderRadius: '8px', 
       border: '2px solid #f00',
-      minWidth: '300px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+      width: '90vw',
+      maxWidth: '350px',
+      minWidth: 'unset',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+      margin: '0 auto',
+      marginTop: 16,
+      marginBottom: 16
     }}>
       <h2 style={{ 
         color: '#d32f2f', 

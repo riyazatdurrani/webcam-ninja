@@ -54,4 +54,6 @@ app.post('/api/scores', async (req, res) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-}); 
+});
+
+const API_URL = 'https://webcam-ninja-okfn.onrender.com/api'; 

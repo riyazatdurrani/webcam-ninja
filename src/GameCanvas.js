@@ -2,22 +2,35 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import { randInt, randomColor, lineIntersectsCircle } from './utils';
 import ReactDOM from 'react-dom';
 
+// Preload images
+const IMAGE_FILENAMES = [
+  '1.png', '2.png', '3.png', '4.png', '5.png', '6.png',
+  'special.png'
+];
+const loadedImages = IMAGE_FILENAMES.map(name => {
+  const img = new window.Image();
+  img.src = process.env.PUBLIC_URL + '/images/' + name;
+  return img;
+});
+
 // Use dynamic width/height for fullscreen
 // const CANVAS_WIDTH = 480;
 // const CANVAS_HEIGHT = 640;
-const OBJECT_RADIUS = 28;
+const OBJECT_RADIUS = 60;
 const SPAWN_INTERVAL = 900; // ms
 const MIN_SPEED = 3.0;
 const MAX_SPEED = 7.0;
 
 function randomObject(width, height) {
+  const img = loadedImages[Math.floor(Math.random() * loadedImages.length)];
   return {
     x: randInt(OBJECT_RADIUS, width - OBJECT_RADIUS),
     y: -OBJECT_RADIUS,
     r: OBJECT_RADIUS,
-    color: randomColor(),
+    image: img,
     speed: MIN_SPEED + Math.pow(Math.random(), 2) * (MAX_SPEED - MIN_SPEED),
     id: Math.random().toString(36).slice(2),
+    sliced: false,
   };
 }
 
@@ -65,15 +78,24 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
       ctx.stroke();
       ctx.restore();
 
-      // Draw objects
+      // Draw objects as images
       ctx.save();
       for (const obj of objectsRef.current) {
-        ctx.beginPath();
-        ctx.arc(obj.x, obj.y, obj.r, 0, 2 * Math.PI);
-        ctx.fillStyle = obj.color;
-        ctx.shadowColor = obj.color;
-        ctx.shadowBlur = 16;
-        ctx.fill();
+        if (obj.image && obj.image.complete) {
+          ctx.drawImage(
+            obj.image,
+            obj.x - obj.r,
+            obj.y - obj.r,
+            obj.r * 2,
+            obj.r * 2
+          );
+        } else {
+          // fallback: draw a circle if image not loaded
+          ctx.beginPath();
+          ctx.arc(obj.x, obj.y, obj.r, 0, 2 * Math.PI);
+          ctx.fillStyle = '#ccc';
+          ctx.fill();
+        }
       }
       ctx.restore();
 
@@ -109,7 +131,14 @@ export default React.memo(function GameCanvas({ running, slicesRef, onScore, onG
       
       // Spawn new objects
       if (now - lastSpawnRef.current > SPAWN_INTERVAL) {
-        objectsRef.current.push(randomObject(width, height));
+        // 70% chance to spawn 1, 25% for 2, 5% for 3
+        const rand = Math.random();
+        let numToSpawn = 1;
+        if (rand > 0.95) numToSpawn = 3;
+        else if (rand > 0.7) numToSpawn = 2;
+        for (let i = 0; i < numToSpawn; i++) {
+          objectsRef.current.push(randomObject(width, height));
+        }
         lastSpawnRef.current = now;
       }
 
